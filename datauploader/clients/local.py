@@ -16,8 +16,8 @@ output sample:
 456	456.456
 123	123.123
 456	456.456
-
 """
+
 
 class LocalStorageClient(AbstractClient):
     separator = '\t'

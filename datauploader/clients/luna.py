@@ -9,6 +9,7 @@ import threading
 import time
 import queue
 import datetime
+import os
 
 requests.packages.urllib3.disable_warnings()
 
@@ -56,6 +57,7 @@ class LunaClient(AbstractClient):
     def job_number(self):
         if not self._job_number:
             self._job_number = self.create_job()
+            self.__test_id_link_to_jobno()
             return self._job_number
         else:
             return self._job_number
@@ -99,7 +101,24 @@ class LunaClient(AbstractClient):
             else:
                 return response.json().get('job')
 
+    def __test_id_link_to_jobno(self):
+        link_dir = os.path.join(self.job.artifacts_base_dir, 'luna')
+        if not os.path.exists(link_dir):
+            os.makedirs(link_dir)
+        try:
+            os.symlink(
+                os.path.join(
+                    os.path.relpath(self.job.artifacts_base_dir, link_dir), self.job.job_id
+                ),
+                os.path.join(link_dir, str(self.job_number))
+            )
+        except OSError:
+            logger.warning('Unable to create symlink for test: %s', self.job.job_id)
+        else:
+            logger.debug('Symlink created for job: %s', self.job.job_id)
+
     def close(self):
+        self.__test_id_link_to_jobno()
         self.register_worker.stop()
         self.register_worker.join()
         self.worker.stop()
