@@ -40,6 +40,7 @@ class LocalStorageClient(AbstractClient):
         )
         logger.debug('writing report data: %s', data)
         self.file_streams[metric.local_id].write(data)
+        self.file_streams[metric.local_id].flush()
 
     def close(self):
         for file_ in self.file_streams:
