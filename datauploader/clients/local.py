@@ -8,6 +8,17 @@ import json
 logger = logging.getLogger(__name__)
 
 
+""" 
+output sample:
+
+{"dtypes": {"ts": "int64", "value": "float64"}, "type": "metric", "names": ["ts", "value"]}
+123	123.123
+456	456.456
+123	123.123
+456	456.456
+
+"""
+
 class LocalStorageClient(AbstractClient):
     separator = '\t'
 
@@ -38,7 +49,6 @@ class LocalStorageClient(AbstractClient):
             index=False,
             columns=metric.columns
         )
-        logger.debug('writing report data: %s', data)
         self.file_streams[metric.local_id].write(data)
         self.file_streams[metric.local_id].flush()
 
