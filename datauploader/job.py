@@ -76,12 +76,12 @@ if __name__ == '__main__':
     job = Job(
         {
             'clients': [
-                #{
-                #    'type': 'luna',
-                #    'api_address': 'https://volta-back-testing.common-int.yandex-team.ru',
-                #    'user_agent': 'Tank Test',
-                #    'filter': []
-                #},
+                {
+                    'type': 'luna',
+                    'api_address': 'https://volta-back-testing.common-int.yandex-team.ru',
+                    'user_agent': 'Tank Test',
+                    'filter': []
+                },
                 {
                     'type': 'local_storage',
                 }
