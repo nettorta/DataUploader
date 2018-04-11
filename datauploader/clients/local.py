@@ -41,7 +41,7 @@ class LocalStorageClient(AbstractClient):
             dtypes = {}
             for name, type_ in metric.dtypes.items():
                 dtypes[name] = type_.__name__
-            header = json.dumps({'type': metric.type, 'names': metric.columns, 'dtypes': dtypes})
+            header = json.dumps({'type': metric.type, 'names': metric.columns, 'dtypes': dtypes, 'meta': metric.meta})
             self.file_streams[metric.local_id].write("%s\n" % header)
         data = df.to_csv(
             sep=self.separator,

@@ -35,11 +35,12 @@ class LunaClient(AbstractClient):
     metric_registration = '/create_metric/'
     metric_upload = '/upload_metric/'
     job_registration = '/create_job/'
+    dbname = 'luna'
 
     def __init__(self, meta, job):
         super(LunaClient, self).__init__(meta, job)
         self.public_ids = {}
-        self.lambda_columns = ['key_date', 'tag']
+        self.luna_columns = ['key_date', 'tag']
         self.key_date = "{key_date}".format(key_date=datetime.datetime.now().strftime("%Y-%m-%d"))
         self.register_worker = RegisterWorkerThread(self)
         self.register_worker.start()
@@ -83,7 +84,9 @@ class LunaClient(AbstractClient):
             ),
             headers=headers
         )
-        req.json = {}  # do not remove this, empty body _should_ be defined, otherwise 'None' will be sent
+        req.json = {
+            'test_start': self.job.test_start
+        }
         prepared_req = req.prepare()
         logger.debug('Prepared create_job request:\n%s', pretty_print(prepared_req))
 
@@ -93,11 +96,11 @@ class LunaClient(AbstractClient):
             logger.warning('Failed to create luna job', exc_info=True)
             raise
         else:
-            logger.debug('Lambda create job status: %s', response.status_code)
+            logger.debug('Luna create job status: %s', response.status_code)
             logger.debug('Answ data: %s', response.json())
             if not response.json().get('job'):
                 logger.warning('Create job answ data: %s', response.json())
-                raise ValueError('Lambda returned answer without jobid: %s', response.json())
+                raise ValueError('Luna returned answer without jobid: %s', response.json())
             else:
                 return response.json().get('job')
 
@@ -219,12 +222,15 @@ class WorkerThread(threading.Thread):
                         header=False,
                         index=False,
                         na_rep="",
-                        columns=self.client.lambda_columns + metric.columns
+                        columns=self.client.luna_columns + metric.columns
                     )
                     req = requests.Request(
-                        'POST', "{api}{data_upload_handler}".format(
+                        'POST', "{api}{data_upload_handler}/?query={query}".format(
                             api=self.client.api_address,
-                            data_upload_handler=self.client.metric_upload
+                            data_upload_handler=self.client.metric_upload,
+                            query="INSERT INTO {table} FORMAT TSV".format(
+                                table="{db}.{type}".format(db=self.client.dbname, type=metric.type)
+                            )
                         )
                     )
                     req.data = body

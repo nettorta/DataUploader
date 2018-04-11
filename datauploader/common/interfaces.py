@@ -8,7 +8,6 @@ class AbstractClient(object):
         self.job = job
         self.pending_queue = queue.Queue()
         self.meta = meta
-        # TODO https://st.yandex-team.ru/LAMBDA-64
 
     def subscribe(self, metric):
         self.pending_metrics.append(metric)

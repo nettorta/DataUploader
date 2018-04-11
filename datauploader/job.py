@@ -4,9 +4,9 @@ from datauploader.metrics import available_metrics
 import queue
 import logging
 import uuid
-import datetime
-import tempfile
+import time
 import os
+import pwd
 
 from router import MetricsRouter
 
@@ -15,16 +15,16 @@ logger = logging.getLogger(__name__)
 
 
 class Job(object):
-    artifacts_base_dir = './logs/'
-
     def __init__(self, meta):
         self.routing_queue = queue.Queue()
+        self.operator = meta.get('operator', pwd.getpwuid(os.geteuid())[0])
         self.job_id = "job_{uuid}".format(uuid=uuid.uuid4())
         self.test_start = meta.get('test_start', time.time())
         self.clients = []
         self.__create_clients(meta)
         self.router = MetricsRouter(self.routing_queue, self.clients)
         self.router.start()
+        self.artifacts_base_dir = meta.get('artifacts_base_dir', './logs')
         self._artifacts_dir = None
 
     def __create_clients(self, meta):
@@ -68,6 +68,11 @@ class Job(object):
             self._artifacts_dir = os.path.abspath(dir_name)
         return self._artifacts_dir
 
+    def close(self):
+        self.router.close()
+        [client.close() for client in self.clients]
+
+
 
 if __name__ == '__main__':
     import time
@@ -75,6 +80,7 @@ if __name__ == '__main__':
     logging.basicConfig(level='DEBUG')
     job = Job(
         {
+            'operator': 'netort',
             'clients': [
                 {
                     'type': 'luna',
@@ -86,7 +92,8 @@ if __name__ == '__main__':
                     'type': 'local_storage',
                 }
             ],
-            'test_start': time.time()
+            'test_start': time.time(),
+            'artifacts_base_dir': './logs'
          }
     )
     logger.debug('Clients: %s', job.clients)
@@ -103,7 +110,7 @@ if __name__ == '__main__':
     logger.debug('Metric: %s', metric_obj)
 
     time.sleep(3)
-    df = pd.DataFrame([[123, "value_123"]], columns=['ts', 'value'])
+    df = pd.DataFrame([[123, "value_123", "trash"]], columns=['ts', 'value', 'trash'])
     metric_obj.put(df)
     df2 = pd.DataFrame([[456, "value_456"]], columns=['ts', 'value'])
     metric_obj.put(df2)
@@ -116,3 +123,4 @@ if __name__ == '__main__':
 
     [client.close() for client in job.clients]
     job.router.close()
+
